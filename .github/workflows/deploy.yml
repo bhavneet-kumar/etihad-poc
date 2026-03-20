@@ -47,7 +47,7 @@ jobs:
       # 5. Build Docker image
       - name: Build Image
         run: |
-          docker build -t $IMAGE:${{ github.sha }} .
+          docker build -t $IMAGE:${{ github.sha }} ./backend
 
       # 6. Push Image
       - name: Push Image
