@@ -20,12 +20,4 @@ USER nodejs
 ENV PORT=8080
 EXPOSE 8080
 
-# Network configuration
-ENV NODE_TLS_REJECT_UNAUTHORIZED=0
-ENV NODE_OPTIONS="--dns-result-order=ipv4first --max-old-space-size=512"
-
-# ✅ Fix healthcheck port
-HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
-  CMD wget -qO- http://localhost:8080/api/claims || exit 1
-
 CMD ["npm", "start"]
