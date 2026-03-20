@@ -2,6 +2,28 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcrypt';
 import { exec, execute, query } from './db';
 
+/** ALTER TABLE requires table ownership; cloud DBs often use a non-owner app role. */
+function isOwnerOrPermissionError(err: unknown): boolean {
+  const e = err as { code?: string; message?: string };
+  if (e.code === '42501') return true;
+  const msg = typeof e.message === 'string' ? e.message : '';
+  return msg.includes('must be owner') || msg.includes('permission denied');
+}
+
+async function tryMigrate(sql: string): Promise<void> {
+  try {
+    await exec(sql);
+  } catch (err) {
+    if (isOwnerOrPermissionError(err)) {
+      console.warn(
+        `[initDb] Skipping migration (connect as table owner or run DDL as superuser): ${sql.trim().slice(0, 120)}…`
+      );
+      return;
+    }
+    throw err;
+  }
+}
+
 /**
  * Creates all tables and seeds policy_rules if missing.
  * Safe to call on every startup (idempotent).
@@ -48,9 +70,9 @@ export async function initDb(): Promise<void> {
     )
   `);
 
-  // If the table existed before we added route fields, ensure they're present.
-  await exec(`ALTER TABLE cases ADD COLUMN IF NOT EXISTS origin TEXT`);
-  await exec(`ALTER TABLE cases ADD COLUMN IF NOT EXISTS destination TEXT`);
+  // Legacy DBs may predate these columns; ALTER needs table owner (skip if app role is not owner).
+  await tryMigrate(`ALTER TABLE cases ADD COLUMN IF NOT EXISTS origin TEXT`);
+  await tryMigrate(`ALTER TABLE cases ADD COLUMN IF NOT EXISTS destination TEXT`);
 
   await exec(`
     CREATE TABLE IF NOT EXISTS expense_lines (
@@ -69,7 +91,7 @@ export async function initDb(): Promise<void> {
     )
   `);
 
-  await exec(`ALTER TABLE expense_lines ADD COLUMN IF NOT EXISTS receipt_url TEXT`);
+  await tryMigrate(`ALTER TABLE expense_lines ADD COLUMN IF NOT EXISTS receipt_url TEXT`);
 
   await exec(`
     CREATE TABLE IF NOT EXISTS attachments (
