@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "nodemon src/apiServer.ts",
     "build": "tsc",
-    "start": "ts-node src/apiServer.ts"
+    "start": "node dist/apiServer.js"
   },
   "dependencies": {
     "@google/genai": "^1.46.0",

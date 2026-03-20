@@ -6,11 +6,39 @@ import authRoutes from './routes/auth.routes';
 import { errorHandler } from './middlewares/errorHandler';
 import { ocrService } from './services/ocr.service';
 import { openApiSpec } from './swagger/openapi';
+import { isDbReady } from './config/dbState';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Register before Swagger so liveness does not depend on UI/static assets
+app.get('/api/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    ocrAvailable: ocrService.isAvailable(),
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// Block DB-backed routes until initDb() finishes (server is already listening).
+app.use((req, res, next) => {
+  if (isDbReady()) return next();
+  const p = req.path;
+  if (
+    p === '/api/health' ||
+    p.startsWith('/api/health/gemini-test') ||
+    p === '/openapi.json' ||
+    p.startsWith('/api-docs')
+  ) {
+    return next();
+  }
+  return res.status(503).json({
+    error: 'Service Unavailable',
+    message: 'Database initializing',
+  });
+});
 
 app.get('/openapi.json', (_req, res) => {
   res.json(openApiSpec);
@@ -25,15 +53,6 @@ app.use(
     },
   })
 );
-
-// Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok',
-    ocrAvailable: ocrService.isAvailable(),
-    timestamp: new Date().toISOString()
-  });
-});
 
 // Diagnostic endpoint to test Gemini API connectivity
 app.get('/api/health/gemini-test', async (req, res) => {

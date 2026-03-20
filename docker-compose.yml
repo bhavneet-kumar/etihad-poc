@@ -30,12 +30,21 @@ services:
     env_file:
       - ./backend/.env
     environment:
+      API_PORT: "3001"
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-claimuser}:${POSTGRES_PASSWORD:-claimpass}@postgres:5432/${POSTGRES_DB:-claims_db}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
+      # Override backend/.env if it sets 0 (insecure); normal TLS verification for Google APIs etc.
+      NODE_TLS_REJECT_UNAUTHORIZED: "1"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-claimuser}:${POSTGRES_PASSWORD:-claimpass}@postgres:5432/${POSTGRES_DB:-claims_db}
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "scripts/docker-healthcheck.js"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
     networks:
       - app-network
 
@@ -50,7 +59,8 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - app-network
 
