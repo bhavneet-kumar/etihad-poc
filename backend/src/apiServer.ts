@@ -4,7 +4,7 @@ import { initDb } from './config/initDb';
 
 dotenv.config();
 
-const PORT = Number(process.env.API_PORT) || 3001;
+const PORT = Number(process.env.API_PORT) || 8080;
 
 async function start() {
   await initDb();
