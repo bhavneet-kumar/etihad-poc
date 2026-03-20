@@ -7,10 +7,10 @@ on:
       - develop
 
 env:
-  REGION: ${{ secrets.GCP_REGION }}
-  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ secrets.GCP_REGION }}
   GAR_LOCATION: ${{ secrets.GAR_LOCATION }}
+  SERVICE_NAME: ${{ secrets.SERVICE_NAME }}
   IMAGE: ${{ secrets.GAR_LOCATION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/etihad-poc/backend
 
 jobs:
@@ -44,7 +44,7 @@ jobs:
         run: |
           gcloud auth configure-docker $GAR_LOCATION-docker.pkg.dev
 
-      # 5. Build Docker image
+      # 5. Build Docker image (from backend folder)
       - name: Build Image
         run: |
           docker build -t $IMAGE:${{ github.sha }} ./backend
@@ -54,13 +54,12 @@ jobs:
         run: |
           docker push $IMAGE:${{ github.sha }}
 
-      # 7. Deploy to Cloud Run
+      # 7. Deploy to Cloud Run (IMAGE ONLY)
       - name: Deploy
         uses: google-github-actions/deploy-cloudrun@v3
         with:
-          source: ./backend
-          region: ${{ env.REGION }}
           service: ${{ env.SERVICE_NAME }}
+          region: ${{ env.REGION }}
           image: ${{ env.IMAGE }}:${{ github.sha }}
 
       # 8. Output URL
