@@ -60,7 +60,7 @@ jobs:
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
-          image: $IMAGE:${{ github.sha }}
+          image: ${{ env.IMAGE }}:${{ github.sha }}
 
       # 8. Output URL
       - name: Show URL
