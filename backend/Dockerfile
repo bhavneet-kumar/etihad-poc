@@ -16,8 +16,7 @@ COPY --chown=nodejs:nodejs . .
 
 USER nodejs
 
-# ✅ Cloud Run requires 8080
-ENV PORT=8080
-EXPOSE 8080
+# ✅ Cloud Run requires 3001
+EXPOSE 3001
 
 CMD ["npm", "start"]
