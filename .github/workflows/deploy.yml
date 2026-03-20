@@ -58,8 +58,9 @@ jobs:
       - name: Deploy
         uses: google-github-actions/deploy-cloudrun@v3
         with:
-          service: ${{ env.SERVICE_NAME }}
+          source: ./backend
           region: ${{ env.REGION }}
+          service: ${{ env.SERVICE_NAME }}
           image: ${{ env.IMAGE }}:${{ github.sha }}
 
       # 8. Output URL
