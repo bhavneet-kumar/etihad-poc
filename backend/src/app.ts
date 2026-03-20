@@ -1,14 +1,30 @@
 import express from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
 import claimRoutes from './routes/claim.routes';
 import authRoutes from './routes/auth.routes';
 import { errorHandler } from './middlewares/errorHandler';
 import { ocrService } from './services/ocr.service';
+import { openApiSpec } from './swagger/openapi';
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+app.get('/openapi.json', (_req, res) => {
+  res.json(openApiSpec);
+});
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(openApiSpec, {
+    customSiteTitle: 'Etihad Claims API',
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  })
+);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
