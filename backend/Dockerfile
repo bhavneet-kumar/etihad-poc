@@ -16,14 +16,16 @@ COPY --chown=nodejs:nodejs . .
 
 USER nodejs
 
-EXPOSE 3001
+# ✅ Cloud Run requires 8080
+ENV PORT=8080
+EXPOSE 8080
 
-# Network configuration for Windows Docker compatibility
+# Network configuration
 ENV NODE_TLS_REJECT_UNAUTHORIZED=0
 ENV NODE_OPTIONS="--dns-result-order=ipv4first --max-old-space-size=512"
 
-# Healthcheck to verify API is responding
+# ✅ Fix healthcheck port
 HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
-  CMD curl -f http://localhost:3001/api/claims || exit 1
+  CMD wget -qO- http://localhost:8080/api/claims || exit 1
 
-CMD ["sh", "-c", "npm run start"]
+CMD ["npm", "start"]
